@@ -1,2 +1,19 @@
 server:
   port: 8080
+spring:
+  application:
+    name: PicPorter
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 500MB
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+
+# minio
+minio:
+  url: <Port>
+  access-key: <ACCESS-KEY>
+  secret-key: <SECRET-KEY>
+  bucket-name: <NAME>
