@@ -17,7 +17,7 @@ import org.springframework.context.annotation.Configuration;
 /**
  * 功能：AmazonS3协议配置
  * 使用AmazonS3协议JDK替代MINIO原生的JDK
- * @author Shelly6 2025/5/10
+ * @author shelly 2025/5/10
  */
 @Configuration
 public class AmazonS3Config {

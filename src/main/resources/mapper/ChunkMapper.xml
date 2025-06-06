@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.org.shelly.picporter.mapper.ChunkMapper">
+
+    <resultMap id="BaseResultMap" type="cn.org.shelly.picporter.model.po.Chunk">
+            <id property="id" column="id" jdbcType="BIGINT"/>
+            <result property="identifier" column="identifier" jdbcType="VARCHAR"/>
+            <result property="uploadId" column="upload_id" jdbcType="VARCHAR"/>
+            <result property="fileName" column="file_name" jdbcType="VARCHAR"/>
+            <result property="bucketName" column="bucket_name" jdbcType="VARCHAR"/>
+            <result property="objectKey" column="object_key" jdbcType="VARCHAR"/>
+            <result property="totalSize" column="total_size" jdbcType="BIGINT"/>
+            <result property="chunkSize" column="chunk_size" jdbcType="BIGINT"/>
+            <result property="chunkNum" column="chunk_num" jdbcType="INTEGER"/>
+            <result property="gmtCreate" column="gmt_create" jdbcType="TIMESTAMP"/>
+            <result property="gmtModified" column="gmt_modified" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,identifier,upload_id,
+        file_name,bucket_name,object_key,
+        total_size,chunk_size,chunk_num,
+        gmt_create,gmt_modified
+    </sql>
+</mapper>

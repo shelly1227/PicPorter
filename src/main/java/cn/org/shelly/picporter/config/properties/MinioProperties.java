@@ -16,17 +16,21 @@ public class MinioProperties implements InitializingBean {
     public static String ACCESS_KEY;
     public static String SECRET_KEY;
     public static String BUCKET_NAME;
-    @Value("${minio.url}")
+    public static String PREFIX;
+    @Value("${upload.minio.url}")
     public String url;
 
-    @Value("${minio.access-key}")
+    @Value("${upload.minio.access-key}")
     public String accessKey;
 
-    @Value("${minio.secret-key}")
+    @Value("${upload.minio.secret-key}")
     public String secretKey;
 
-    @Value("${minio.bucket-name}")
+    @Value("${upload.minio.bucket-name}")
     public String bucketName;
+
+    @Value("${upload.prefix}")
+    public String prefix;
 
     @Override
     public void afterPropertiesSet() {
@@ -34,6 +38,7 @@ public class MinioProperties implements InitializingBean {
         ACCESS_KEY = accessKey;
         SECRET_KEY = secretKey;
         BUCKET_NAME = bucketName;
+        PREFIX = prefix;
     }
 
 }
