@@ -5,15 +5,50 @@ spring:
     name: PicPorter
   servlet:
     multipart:
-      max-file-size: 500MB
-      max-request-size: 500MB
+      max-file-size: 50MB
+      max-request-size: 50MB
   mvc:
     pathmatch:
       matching-strategy: ant_path_matcher
+    # 前端参数String格式化日期
+    format:
+      date: yyyy-MM-dd HH:mm:ss
+  datasource:
+    url: jdbc:mysql://localhost:3306/picporter?serverTimezone=GMT%2B8&useUnicode=true&characterEncoding=utf-8
+    username: <USERNAME>
+    password: <PASSWORD>
+    driver-class-name: com.mysql.cj.jdbc.Driver
+upload:
+  prefix: article
+  strategy: minio
+  is-stored: false
+  # minio
+  minio:
+    url: <URL>
+    access-key: <ACCESS-KEY>
+    secret-key: <SECRET-KEY>
+    bucket-name: <NAME>
+  oss:
+    url: <URL>
+    endpoint: <ENDPOINT>
+    bucketName: <BUCKET-NAME>
+    accessKeyId: <ACCESS-KEY-ID>
+    accesskeySecret: <ACCESS-KEY-SECRET>
 
-# minio
-minio:
-  url: <Port>
-  access-key: <ACCESS-KEY>
-  secret-key: <SECRET-KEY>
-  bucket-name: <NAME>
+# springdoc-openapi
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+  group-configs:
+    - group: '基于springboot的图片上传相关助手——PicPorter'
+      paths-to-match: '/**'
+      packages-to-scan: cn.org.shelly.picporter.controller
+# knife4j
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn

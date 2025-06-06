@@ -5,7 +5,7 @@ import cn.org.shelly.picporter.model.req.FileChunkInitTaskReq;
 import cn.org.shelly.picporter.model.req.FileUploadReq;
 import cn.org.shelly.picporter.model.resp.FileChunkResp;
 import cn.org.shelly.picporter.model.resp.FileInfoResp;
-import cn.org.shelly.picporter.service.IFileUploadService;
+import cn.org.shelly.picporter.strategy.context.UploadStrategyContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -14,14 +14,17 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
-
+/**
+ * 文件上传控制层
+ * @author Shelly
+ */
 @RestController
 @RequestMapping("/upload")
 @Slf4j
 @RequiredArgsConstructor
 public class FileUploadController {
 
-    private final IFileUploadService fileService;
+    private final UploadStrategyContext uploadStrategyContext;
 
     /**
      * 小文件上传
@@ -42,7 +45,7 @@ public class FileUploadController {
                 .size(size)
                 .file(file)
                 .build();
-        return Result.success(fileService.upload(req));
+        return Result.success(uploadStrategyContext.executeUploadStrategy(req));
     }
 
     /**
@@ -56,7 +59,7 @@ public class FileUploadController {
      */
     @PostMapping("/initShardTask")
     public Result<FileChunkResp> initFileChunkTask(@RequestBody FileChunkInitTaskReq req) {
-        FileChunkResp fileChunkDTO = fileService.initFileChunkTask(req);
+        FileChunkResp fileChunkDTO = uploadStrategyContext.initFileChunkTask(req);
         return Result.success(fileChunkDTO);
     }
 
@@ -68,7 +71,7 @@ public class FileUploadController {
      */
     @PostMapping("/second")
     public Result<Boolean> secondUpload(String identifier, String fileName) {
-        boolean uploadSuccess = fileService.secondUpload(identifier, fileName);
+        boolean uploadSuccess = uploadStrategyContext.secondUpload(identifier, fileName);
         return Result.success(uploadSuccess);
     }
 
@@ -83,7 +86,7 @@ public class FileUploadController {
      */
     @DeleteMapping("/{identifier}")
     public Result<Void> delete(@PathVariable("identifier") String identifier) {
-        fileService.delete(identifier);
+        uploadStrategyContext.delete(identifier);
         return Result.success();
     }
     /**
@@ -102,7 +105,7 @@ public class FileUploadController {
                                    @PathVariable("partNumber") int partNumber,
                                    @RequestParam("file") MultipartFile file) {
         try {
-            boolean success = fileService.uploadPart(identifier, partNumber, file.getBytes());
+            boolean success = uploadStrategyContext.uploadPart(identifier, partNumber, file.getBytes());
             return Result.isSuccess(success);
         } catch (Exception e) {
             return Result.fail();
@@ -119,7 +122,7 @@ public class FileUploadController {
      */
     @PostMapping("merge/{identifier}")
     public Result<String> mergeFileChunk(@PathVariable("identifier") String identifier) {
-        return Result.success(fileService.mergeFileChunk(identifier));
+        return Result.success(uploadStrategyContext.mergeFileChunk(identifier));
     }
     /**
      * 获取文件分片上传进度
@@ -133,7 +136,7 @@ public class FileUploadController {
      */
     @GetMapping("/progress/{identifier}")
     public Result<FileChunkResp> getFileChunkUploadProgress(@PathVariable("identifier") String identifier) {
-        FileChunkResp fileChunkUploadProgressDTO = fileService.listFileChunk(identifier);
+        FileChunkResp fileChunkUploadProgressDTO = uploadStrategyContext.listFileChunk(identifier);
         return Result.success(fileChunkUploadProgressDTO);
     }
     /**
@@ -150,7 +153,16 @@ public class FileUploadController {
     public Result<List<FileInfoResp>> list(@RequestParam(required = false) String fileName,
                                            @RequestParam(required = false, defaultValue = "1") Integer pageNum,
                                            @RequestParam(required = false, defaultValue = "10") Integer pageSize) {
-        List<FileInfoResp> fileList = fileService.list(fileName, pageNum, pageSize);
+        List<FileInfoResp> fileList = uploadStrategyContext.list(fileName, pageNum, pageSize);
         return Result.success(fileList);
+    }
+
+    /**
+     * 测试方法
+     * @return 测试结果
+     */
+    @GetMapping("/test")
+    public Result<String> test() {
+        return Result.success(uploadStrategyContext.test());
     }
 }

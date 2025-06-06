@@ -43,7 +43,7 @@ public class File implements Serializable {
     private Long fileSize;
 
     /**
-     * 文件的key, 格式 日期/md5.拓展名，比如 2025-03-13/921674fd-cdaf-459a-be7b-109469e7050d.png
+     * 文件的访问路径
      */
     @TableField(value = "object_key")
     private String objectKey;
