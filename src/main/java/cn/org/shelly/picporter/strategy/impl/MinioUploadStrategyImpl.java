@@ -10,6 +10,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.*;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.MediaType;
 import org.springframework.http.MediaTypeFactory;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ import java.util.List;
  * Minio上传策略
  * @author Shelly
  */
+@ConditionalOnProperty(prefix = "upload", name = "strategy", havingValue = "minio")
 @Service("minioUploadStrategyImpl")
 @Slf4j
 public class MinioUploadStrategyImpl extends AbstractUploadStrategyImpl{

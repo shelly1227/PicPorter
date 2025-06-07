@@ -21,7 +21,7 @@ spring:
 upload:
   prefix: article
   strategy: oss
-  is-stored: false
+  is-stored: true
   # minio
   minio:
     url: <URL>
