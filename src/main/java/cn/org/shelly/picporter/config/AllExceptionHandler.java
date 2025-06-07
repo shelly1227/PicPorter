@@ -23,7 +23,7 @@ public class AllExceptionHandler {
         HttpServletRequest request = ((ServletRequestAttributes) (RequestContextHolder.currentRequestAttributes())).getRequest();
         log.error("端口" + request.getServletPath() + "发生异常:", ex);
         log.error("发生异常:", ex);
-        return Result.fail().message(CodeEnum.SYSTEM_REPAIR.getMsg() + "\n异常信息：" + ex.getMessage()).code(CodeEnum.SYSTEM_REPAIR.getCode());
+        return Result.fail().message(CodeEnum.FAIL.getMsg() + "\n异常信息：" + ex.getMessage()).code(CodeEnum.FAIL.getCode());
     }
 
     /**

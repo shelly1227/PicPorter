@@ -20,7 +20,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
 upload:
   prefix: article
-  strategy: minio
+  strategy: oss
   is-stored: false
   # minio
   minio:
@@ -29,9 +29,9 @@ upload:
     secret-key: <SECRET-KEY>
     bucket-name: <NAME>
   oss:
-    url: <URL>
-    endpoint: <ENDPOINT>
-    bucketName: <BUCKET-NAME>
+    url: https://EXAMPLE-BUCKET.oss-cn-chengdu.aliyuncs.com/
+    endpoint: oss-cn-chengdu.aliyuncs.com
+    bucketName: EXAMPLE-BUCKET
     accessKeyId: <ACCESS-KEY-ID>
     accesskeySecret: <ACCESS-KEY-SECRET>
 

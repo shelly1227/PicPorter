@@ -74,9 +74,9 @@ public enum CodeEnum {
     LOGIN_EXPIRED(305, "登录已过期，请重新登陆！"),
 
     /**
-     * 系统维护
+     * 系统不支持该方法
      */
-    SYSTEM_REPAIR(501, "系统维护中，请稍后！"),
+    SYSTEM_UNSUPPORTED_FUNCTION(501, "该策略暂不支持该功能！"),
 
     /**
      * 服务异常
