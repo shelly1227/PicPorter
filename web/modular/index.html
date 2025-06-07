@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PicPorter - 智能文件上传助手</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<!-- 主容器 -->
+<div class="container">
+    <!-- 头部区域 -->
+    <header class="header">
+        <div class="header-content">
+            <h1><i class="fas fa-cloud-upload-alt"></i> PicPorter</h1>
+            <p>智能文件上传助手 - 支持分片上传、秒传、断点续传</p>
+        </div>
+        <div class="header-stats">
+            <div class="stat-item">
+                <span class="stat-number" id="totalFiles">0</span>
+                <span class="stat-label">文件总数</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number" id="uploadedFiles">0</span>
+                <span class="stat-label">已上传</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number" id="totalSize">0</span>
+                <span class="stat-label">总大小</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区域 -->
+    <main class="main-content">
+        <!-- 上传区域 -->
+        <section class="upload-section">
+            <h2 class="section-title">
+                <i class="fas fa-upload"></i>
+                文件上传
+            </h2>
+
+            <!-- 拖拽上传区域 -->
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-content">
+                    <div class="upload-icon">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <div class="upload-text">
+                        <h3>拖拽文件到此处或点击选择文件</h3>
+                        <p>支持多文件上传，支持大文件分片上传</p>
+                    </div>
+                    <div class="upload-buttons">
+                        <button class="btn btn-primary" id="selectFilesBtn">
+                            <i class="fas fa-folder-open"></i> 选择文件
+                        </button>
+                        <button class="btn btn-secondary" id="selectFolderBtn">
+                            <i class="fas fa-folder"></i> 选择文件夹
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 隐藏的文件输入 -->
+            <input type="file" class="file-input" id="fileInput" multiple>
+            <input type="file" class="file-input" id="folderInput" webkitdirectory>
+        </section>
+
+        <!-- 文章处理区域 -->
+        <section class="article-section">
+            <h2 class="section-title">
+                <i class="fas fa-edit"></i>
+                文章图片处理
+            </h2>
+
+            <div class="article-form">
+                <div class="form-group">
+                    <label for="articleTitle">文章标题</label>
+                    <input type="text" id="articleTitle" placeholder="请输入文章标题">
+                </div>
+                <div class="form-group">
+                    <label for="articleContent">文章内容 (Markdown)</label>
+                    <textarea id="articleContent" placeholder="请粘贴包含本地图片链接的Markdown内容..."></textarea>
+                </div>
+                <div class="form-group">
+                    <button class="btn btn-success" id="processArticleBtn">
+                        <i class="fas fa-magic"></i> 处理文章图片
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 文件列表区域 -->
+        <section class="file-list-section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fas fa-list"></i>
+                    上传队列
+                </h2>
+                <div class="section-actions">
+                    <button class="btn btn-danger btn-small" id="clearAllBtn">
+                        <i class="fas fa-trash"></i> 清空队列
+                    </button>
+                    <button class="btn btn-secondary btn-small" id="pauseAllBtn">
+                        <i class="fas fa-pause"></i> 全部暂停
+                    </button>
+                    <button class="btn btn-success btn-small" id="startAllBtn">
+                        <i class="fas fa-play"></i> 全部开始
+                    </button>
+                </div>
+            </div>
+
+            <!-- 文件过滤器 -->
+            <div class="file-filters">
+                <div class="filter-group">
+                    <label>状态：</label>
+                    <select id="statusFilter">
+                        <option value="">全部</option>
+                        <option value="waiting">等待中</option>
+                        <option value="uploading">上传中</option>
+                        <option value="completed">已完成</option>
+                        <option value="error">失败</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>类型：</label>
+                    <select id="typeFilter">
+                        <option value="">全部</option>
+                        <option value="image">图片</option>
+                        <option value="video">视频</option>
+                        <option value="document">文档</option>
+                        <option value="other">其他</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>搜索：</label>
+                    <input type="text" id="searchInput" placeholder="搜索文件名...">
+                </div>
+            </div>
+
+            <!-- 文件列表 -->
+            <div class="file-list" id="fileList">
+                <div class="empty-state">
+                    <i class="fas fa-inbox"></i>
+                    <h3>暂无文件</h3>
+                    <p>拖拽或选择文件开始上传</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 服务器文件列表 -->
+        <section class="server-files-section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fas fa-server"></i>
+                    服务器文件
+                </h2>
+                <div class="section-actions">
+                    <button class="btn btn-primary btn-small" id="refreshServerFilesBtn">
+                        <i class="fas fa-sync"></i> 刷新
+                    </button>
+                </div>
+            </div>
+
+            <!-- 分页控制 -->
+            <div class="pagination-controls">
+                <div class="page-size">
+                    <label>每页显示：</label>
+                    <select id="pageSizeSelect">
+                        <option value="10">10</option>
+                        <option value="20" selected>20</option>
+                        <option value="50">50</option>
+                    </select>
+                </div>
+                <div class="pagination" id="pagination">
+                    <!-- 分页按钮将动态生成 -->
+                </div>
+            </div>
+
+            <!-- 服务器文件列表 -->
+            <div class="server-file-list" id="serverFileList">
+                <!-- 服务器文件将动态加载 -->
+            </div>
+        </section>
+    </main>
+</div>
+
+<!-- 模态框 -->
+<div class="modal" id="previewModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>文件预览</h3>
+            <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body" id="previewContent">
+            <!-- 预览内容 -->
+        </div>
+    </div>
+</div>
+
+<!-- 确认删除模态框 -->
+<div class="modal" id="confirmModal">
+    <div class="modal-content modal-small">
+        <div class="modal-header">
+            <h3>确认操作</h3>
+            <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p id="confirmMessage">确定要执行此操作吗？</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="confirmCancel">取消</button>
+            <button class="btn btn-danger" id="confirmOk">确定</button>
+        </div>
+    </div>
+</div>
+
+<!-- 加载遮罩 -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner">
+        <div class="spinner"></div>
+        <p>处理中...</p>
+    </div>
+</div>
+
+<!-- 通知容器 -->
+<div class="notification-container" id="notificationContainer">
+    <!-- 通知将动态添加 -->
+</div>
+
+<!-- 引入外部库和脚本 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

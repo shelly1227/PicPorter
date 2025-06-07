@@ -13,8 +13,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.MediaTypeFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-
 import java.io.InputStream;
 import java.util.List;
 
@@ -104,11 +102,11 @@ public class MinioUploadStrategyImpl extends AbstractUploadStrategyImpl{
     }
 
     @Override
-    public boolean upload(String path, MultipartFile file) {
-        try (InputStream in = file.getInputStream()) {
+    public boolean upload(String path, InputStream stream, long size, String type) {
+        try (InputStream in = stream) {
             ObjectMetadata metadata = new ObjectMetadata();
-            metadata.setContentType(file.getContentType());
-            metadata.setContentLength(file.getSize());
+            metadata.setContentType(type);
+            metadata.setContentLength(size);
             amazonS3Client.putObject(minioProperties.bucketName, path, in, metadata);
             return true;
         } catch (Exception e) {

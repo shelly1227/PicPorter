@@ -1,15 +1,17 @@
 package cn.org.shelly.picporter.strategy;
 
+import cn.org.shelly.picporter.model.req.ArticleReq;
 import cn.org.shelly.picporter.model.req.FileChunkInitTaskReq;
 import cn.org.shelly.picporter.model.req.FileUploadReq;
 import cn.org.shelly.picporter.model.resp.FileChunkResp;
 import cn.org.shelly.picporter.model.resp.FileInfoResp;
 
+import java.io.IOException;
 import java.util.List;
 
 public interface UploadStrategy {
 
-    String uploadFile(FileUploadReq req);
+    String uploadFile(FileUploadReq req) throws IOException;
 
     boolean secondUpload(String identifier, String fileName);
 
@@ -26,4 +28,6 @@ public interface UploadStrategy {
     FileChunkResp listFileChunk(String identifier);
 
     List<FileInfoResp> list(String fileName, Integer pageNum, Integer pageSize);
+
+    String transfer(ArticleReq req);
 }

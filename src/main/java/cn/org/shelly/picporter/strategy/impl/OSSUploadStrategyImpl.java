@@ -13,9 +13,7 @@ import com.aliyun.oss.OSSException;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * OSS上传策略实现
@@ -42,11 +40,11 @@ public class OSSUploadStrategyImpl extends AbstractUploadStrategyImpl {
     }
 
     @Override
-    public boolean upload(String path, MultipartFile file) {
+    public boolean upload(String path, InputStream stream, long size, String type) {
         OSS ossClient = getOssClient();
         try {
             // 调用 OSS 方法上传
-            ossClient.putObject(ossProperties.getBucketName(), path, file.getInputStream());
+            ossClient.putObject(ossProperties.getBucketName(), path, stream);
             return true; // 上传成功
         } catch (OSSException oe) {
             log.error("OSS 异常：{}", oe.getErrorMessage());
@@ -57,9 +55,6 @@ public class OSSUploadStrategyImpl extends AbstractUploadStrategyImpl {
         } catch (ClientException ce) {
             log.error("客户端异常：{}", ce.getMessage());
             return false;
-        } catch (IOException e) {
-            log.error("IO异常：{}", e.getMessage(), e);
-            throw new CustomException("上传失败：读取文件流异常", 500);
         } finally {
             ossClient.shutdown();
         }

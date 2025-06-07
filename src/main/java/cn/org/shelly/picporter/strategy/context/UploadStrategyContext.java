@@ -1,6 +1,7 @@
 package cn.org.shelly.picporter.strategy.context;
 
 import cn.org.shelly.picporter.enums.UploadModeEnum;
+import cn.org.shelly.picporter.model.req.ArticleReq;
 import cn.org.shelly.picporter.model.req.FileChunkInitTaskReq;
 import cn.org.shelly.picporter.model.req.FileUploadReq;
 import cn.org.shelly.picporter.model.resp.FileChunkResp;
@@ -10,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -28,7 +30,7 @@ public class UploadStrategyContext {
     @Autowired
     private Map<String, UploadStrategy> uploadStrategyMap;
 
-    public String executeUploadStrategy(FileUploadReq req) {
+    public String executeUploadStrategy(FileUploadReq req) throws IOException {
         return uploadStrategyMap.get(UploadModeEnum.getStrategy(uploadStrategy)).uploadFile(req);
     }
 
@@ -62,5 +64,9 @@ public class UploadStrategyContext {
 
     public String test() {
         return uploadStrategyMap.get(UploadModeEnum.getStrategy(uploadStrategy)).test();
+    }
+
+    public String transfer(ArticleReq req) {
+        return uploadStrategyMap.get(UploadModeEnum.getStrategy(uploadStrategy)).transfer(req);
     }
 }

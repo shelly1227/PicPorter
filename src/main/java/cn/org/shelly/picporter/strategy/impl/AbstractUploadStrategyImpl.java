@@ -6,6 +6,7 @@ import cn.org.shelly.picporter.mapper.ChunkMapper;
 import cn.org.shelly.picporter.mapper.FileMapper;
 import cn.org.shelly.picporter.model.po.Chunk;
 import cn.org.shelly.picporter.model.po.File;
+import cn.org.shelly.picporter.model.req.ArticleReq;
 import cn.org.shelly.picporter.model.req.FileChunkInitTaskReq;
 import cn.org.shelly.picporter.model.req.FileUploadReq;
 import cn.org.shelly.picporter.model.resp.FileChunkResp;
@@ -18,11 +19,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * 文件上传策略抽象类
@@ -50,13 +56,12 @@ public abstract class AbstractUploadStrategyImpl implements UploadStrategy {
      * @return {@link String} 文件url
      */
     @Override
-    public String uploadFile(FileUploadReq req) {
+    public String uploadFile(FileUploadReq req) throws IOException {
         String extName = FileNameUtil.extName(req.getFileName());
         String uuid = UUID.randomUUID().toString().replace("-", "");
         String fileName = uuid + "." + extName;
-        String objectName = prefix+ "/" + fileName;
-        // 上传至MinIO
-        boolean uploadSuccess = upload(objectName, req.getFile());
+        String objectName = prefix + "/" + fileName;
+        boolean uploadSuccess = upload(objectName, req.getFile().getInputStream(), req.getFile().getSize(), req.getFile().getContentType());
         if (!uploadSuccess) {
             throw new CustomException("上传失败");
         }
@@ -73,7 +78,9 @@ public abstract class AbstractUploadStrategyImpl implements UploadStrategy {
      */
     @Override
     public boolean secondUpload(String identifier, String fileName) {
-        checkIsStored();
+        if(!isStored){
+            throw new CustomException("未开启数据库功能！");
+        }
         if (StringUtils.isNotBlank(identifier)) {
             File fileDO = fileMapper.selectOne(new QueryWrapper<File>().eq("identifier",identifier));
             return fileDO != null;
@@ -87,7 +94,9 @@ public abstract class AbstractUploadStrategyImpl implements UploadStrategy {
      */
     @Override
     public void delete(String identifier) {
-        checkIsStored();
+        if(!isStored){
+            throw new CustomException("未开启数据库功能！");
+        }
         File file = fileMapper.selectOne(new QueryWrapper<File>().eq("identifier", identifier));
         if (file != null) {
             // 从存储中删除文件
@@ -101,10 +110,12 @@ public abstract class AbstractUploadStrategyImpl implements UploadStrategy {
     }
     @Override
     public FileChunkResp initFileChunkTask(FileChunkInitTaskReq req) {
-        checkIsStored();
-        String extName = FileNameUtil.extName(req.getFileName()); // 提取扩展名
-        String uuid = UUID.randomUUID().toString().replace("-", "");  // 生成无短横线的 UUID
-        String fileName = uuid + "." + extName;   // 拼接文件名
+        if(!isStored){
+            throw new CustomException("未开启数据库功能！");
+        }
+        String extName = FileNameUtil.extName(req.getFileName());
+        String uuid = UUID.randomUUID().toString().replace("-", "");
+        String fileName = uuid + "." + extName;
         String objectName = prefix + "/" + fileName;
         Chunk fileChunkDO = createFileChunkDO(req, objectName);
         fileChunkMapper.insert(fileChunkDO);
@@ -112,7 +123,9 @@ public abstract class AbstractUploadStrategyImpl implements UploadStrategy {
     }
     @Override
     public List<FileInfoResp> list(String fileName, Integer pageNum, Integer pageSize) {
-        checkIsStored();
+        if(!isStored){
+            throw new CustomException("未开启数据库功能！");
+        }
         // 构建查询条件
         QueryWrapper<File> queryWrapper = new QueryWrapper<>();
         if (StringUtils.isNotBlank(fileName)) {
@@ -138,7 +151,9 @@ public abstract class AbstractUploadStrategyImpl implements UploadStrategy {
     }
     @Override
     public boolean uploadPart(String identifier, int partNumber, byte[] file) {
-        checkIsStored();
+        if(!isStored){
+            throw new CustomException("未开启数据库功能！");
+        }
         // 检查分片上传任务是否存在
         Chunk fileChunkDO = fileChunkMapper.selectOne(new QueryWrapper<Chunk>().eq("identifier", identifier));
         if (fileChunkDO == null) {
@@ -149,7 +164,9 @@ public abstract class AbstractUploadStrategyImpl implements UploadStrategy {
 
     @Override
     public String mergeFileChunk(String identifier) {
-        checkIsStored();
+        if(!isStored) {
+            throw new CustomException("未开启数据库功能！");
+        }
         // 检查分片上传任务是否存在
         Chunk fileChunkDO = fileChunkMapper.selectOne(new QueryWrapper<Chunk>().eq("identifier", identifier));
         if (fileChunkDO == null) {
@@ -159,12 +176,52 @@ public abstract class AbstractUploadStrategyImpl implements UploadStrategy {
     }
     @Override
     public FileChunkResp listFileChunk(String identifier) {
-        checkIsStored();
+        if(!isStored){
+            throw new CustomException("未开启数据库功能！");
+        }
         Chunk task = fileChunkMapper.selectOne(new QueryWrapper<Chunk>().eq("identifier", identifier));
         if (task == null) {
             throw new CustomException("上传任务不存在");
         }
         return listChunks(task);
+    }
+    @Override
+    public String transfer(ArticleReq req) {
+        String content = req.getContent();
+        Pattern htmlImgPattern = Pattern.compile("<img\\b[^>]*src\\s*=\\s*(['\"])(.*?)\\1[^>]*>", Pattern.CASE_INSENSITIVE);
+        Matcher htmlMatcher = htmlImgPattern.matcher(content);
+        StringBuilder htmlBuffer = new StringBuilder();
+        while (htmlMatcher.find()) {
+            String original = htmlMatcher.group(0);
+            String quote = htmlMatcher.group(1);
+            String src = htmlMatcher.group(2);
+
+            if (!isWebPath(src)) {
+                String uploadedUrl = uploadLocalImage(src);
+                if (uploadedUrl != null) {
+                    String replaced = original.replace("src=" + quote + src + quote, "src=" + quote + uploadedUrl + quote);
+                    htmlMatcher.appendReplacement(htmlBuffer, Matcher.quoteReplacement(replaced));
+                }
+            }
+        }
+        htmlMatcher.appendTail(htmlBuffer);
+        content = htmlBuffer.toString();
+        // Markdown 图片
+        Pattern mdImgPattern = Pattern.compile("!\\[[^\\]]*\\]\\((.*?)\\)");
+        Matcher mdMatcher = mdImgPattern.matcher(content);
+        StringBuilder mdBuffer = new StringBuilder();
+        while (mdMatcher.find()) {
+            String path = mdMatcher.group(1);
+            if (!isWebPath(path)) {
+                String uploadedUrl = uploadLocalImage(path);
+                if (uploadedUrl != null) {
+                    String replaced = mdMatcher.group(0).replace(path, uploadedUrl);
+                    mdMatcher.appendReplacement(mdBuffer, Matcher.quoteReplacement(replaced));
+                }
+            }
+        }
+        mdMatcher.appendTail(mdBuffer);
+        return mdBuffer.toString();
     }
 
     /**
@@ -193,9 +250,12 @@ public abstract class AbstractUploadStrategyImpl implements UploadStrategy {
     /**
      * 上传文件
      * @param path 路径
-     * @param file 文件
+     * @param stream 文件流
+     * @param size 文件大小
+     * @param type 文件类型
+     * @return {@link String} 文件url
      */
-    public abstract boolean upload(String path, MultipartFile file);
+    public abstract boolean upload(String path, InputStream stream, long size, String type);
 
     /**
      * 获取文件访问url
@@ -226,14 +286,11 @@ public abstract class AbstractUploadStrategyImpl implements UploadStrategy {
      */
     public abstract Chunk createFileChunkDO(FileChunkInitTaskReq req, String objectName);
 
-    private void checkIsStored() {
-        if (!isStored) {
-            throw new CustomException("未开启数据库存储功能！");
-        }
-    }
 
     void saveFile(FileUploadReq req, String o) {
-        checkIsStored();
+        if(!isStored){
+            return;
+        }
         String extName = FileNameUtil.extName(req.getFileName());
         // 构建文件数据对象，包含文件名、大小、后缀等基本信息
         File fileDO = File.builder()
@@ -247,4 +304,35 @@ public abstract class AbstractUploadStrategyImpl implements UploadStrategy {
         fileMapper.insert(fileDO);
         log.info("文件信息保存成功");
     }
+
+    private static boolean isWebPath(String path) {
+        if (path == null) return false;
+        return path.startsWith("http://") || path.startsWith("https://") || path.startsWith("ftp://");
+    }
+    private String uploadLocalImage(String localPath) {
+        java.io.File file = new java.io.File(localPath);
+        if (!file.exists()) {
+            throw new CustomException("文件不存在: " + localPath);
+        }
+        try (InputStream inputStream = new FileInputStream(file)) {
+            String fileName = file.getName();
+            String extName = FileNameUtil.extName(fileName);
+            String uuid = UUID.randomUUID().toString().replace("-", "");
+            String objectName = prefix + "/" + uuid + "." + extName;
+
+            long fileSize = file.length();
+            String contentType = Files.probeContentType(file.toPath());
+
+            boolean uploadSuccess = upload(objectName, inputStream, fileSize, contentType);
+            if (!uploadSuccess) {
+                throw new CustomException("上传失败: " + fileName);
+            }
+            return getFileAccessUrl(objectName);
+        } catch (IOException e) {
+            log.error("上传失败: " + localPath, e);
+            throw new CustomException("上传失败: " + localPath);
+        }
+
+    }
+
 }

@@ -1,17 +1,23 @@
 package cn.org.shelly.picporter.controller;
 
 import cn.org.shelly.picporter.common.Result;
+import cn.org.shelly.picporter.exception.CustomException;
+import cn.org.shelly.picporter.model.req.ArticleReq;
 import cn.org.shelly.picporter.model.req.FileChunkInitTaskReq;
 import cn.org.shelly.picporter.model.req.FileUploadReq;
 import cn.org.shelly.picporter.model.resp.FileChunkResp;
 import cn.org.shelly.picporter.model.resp.FileInfoResp;
 import cn.org.shelly.picporter.strategy.context.UploadStrategyContext;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -21,7 +27,9 @@ import java.util.List;
 @RestController
 @RequestMapping("/upload")
 @Slf4j
+@Tag(name = "文件上传")
 @RequiredArgsConstructor
+@CrossOrigin("*")
 public class FileUploadController {
 
     private final UploadStrategyContext uploadStrategyContext;
@@ -33,6 +41,7 @@ public class FileUploadController {
      * </p>
      */
     @PostMapping(value = "/tiny", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "小文件上传")
     public Result<String> uploadFile(
             @RequestParam("fileName") String fileName,
             @RequestParam("identifier") String identifier,
@@ -45,7 +54,11 @@ public class FileUploadController {
                 .size(size)
                 .file(file)
                 .build();
-        return Result.success(uploadStrategyContext.executeUploadStrategy(req));
+        try {
+            return Result.success(uploadStrategyContext.executeUploadStrategy(req));
+        } catch (IOException e) {
+           throw new CustomException("上传失败");
+        }
     }
 
     /**
@@ -58,6 +71,7 @@ public class FileUploadController {
      * @return 分片任务信息，包含uploadId和分片数量
      */
     @PostMapping("/initShardTask")
+    @Operation(summary = "初始化文件分片上传任务")
     public Result<FileChunkResp> initFileChunkTask(@RequestBody FileChunkInitTaskReq req) {
         FileChunkResp fileChunkDTO = uploadStrategyContext.initFileChunkTask(req);
         return Result.success(fileChunkDTO);
@@ -70,6 +84,7 @@ public class FileUploadController {
      * </p>
      */
     @PostMapping("/second")
+    @Operation(summary = "秒传文件")
     public Result<Boolean> secondUpload(String identifier, String fileName) {
         boolean uploadSuccess = uploadStrategyContext.secondUpload(identifier, fileName);
         return Result.success(uploadSuccess);
@@ -85,6 +100,7 @@ public class FileUploadController {
      * @return 操作结果
      */
     @DeleteMapping("/{identifier}")
+    @Operation(summary = "删除文件")
     public Result<Void> delete(@PathVariable("identifier") String identifier) {
         uploadStrategyContext.delete(identifier);
         return Result.success();
@@ -101,6 +117,7 @@ public class FileUploadController {
      * @return 上传结果
      */
     @PostMapping("/uploadPart/{identifier}/{partNumber}")
+    @Operation(summary = "直接上传分片")
     public Result<Void> uploadPart(@PathVariable("identifier") String identifier,
                                    @PathVariable("partNumber") int partNumber,
                                    @RequestParam("file") MultipartFile file) {
@@ -121,6 +138,7 @@ public class FileUploadController {
      * @return 合并后的文件路径
      */
     @PostMapping("merge/{identifier}")
+    @Operation(summary = "合并文件分片")
     public Result<String> mergeFileChunk(@PathVariable("identifier") String identifier) {
         return Result.success(uploadStrategyContext.mergeFileChunk(identifier));
     }
@@ -135,6 +153,7 @@ public class FileUploadController {
      * @description 查询已上传的分片信息，用于断点续传
      */
     @GetMapping("/progress/{identifier}")
+    @Operation(summary = "获取文件分片上传进度")
     public Result<FileChunkResp> getFileChunkUploadProgress(@PathVariable("identifier") String identifier) {
         FileChunkResp fileChunkUploadProgressDTO = uploadStrategyContext.listFileChunk(identifier);
         return Result.success(fileChunkUploadProgressDTO);
@@ -150,6 +169,7 @@ public class FileUploadController {
      * @return 文件信息列表，包含文件基本信息和预签名URL
      */
     @GetMapping("/list")
+    @Operation(summary = "获取文件列表")
     public Result<List<FileInfoResp>> list(@RequestParam(required = false) String fileName,
                                            @RequestParam(required = false, defaultValue = "1") Integer pageNum,
                                            @RequestParam(required = false, defaultValue = "10") Integer pageSize) {
@@ -162,7 +182,16 @@ public class FileUploadController {
      * @return 测试结果
      */
     @GetMapping("/test")
+    @Operation(summary = "测试方法")
     public Result<String> test() {
         return Result.success(uploadStrategyContext.test());
+    }
+    @PostMapping("/article")
+    @Operation(summary = "文章图片替换")
+    public Result<String> transfer(@RequestBody ArticleReq req) {
+        if(StringUtils.isBlank(req.getTitle()) || StringUtils.isBlank(req.getContent())){
+            return Result.fail("标题或内容不能为空");
+        }
+        return Result.success(uploadStrategyContext.transfer(req));
     }
 }
