@@ -49,7 +49,7 @@ Node.js (可选，用于前端开发)
 ### 2. 克隆项目
 
 ```bash
-git clone https://github.com/shelly1227/PicPorter.git
+git clone https://github.com/ShlyxCoder/PicPorter.git
 ```
 
 ### 3. 数据库配置
@@ -131,7 +131,7 @@ mvn spring-boot:run
 
 # 或者编译后启动
 mvn clean package
-java -jar target/picporter-1.0.0.jar
+java -jar target/picporter.jar
 ```
 
 应用启动后访问：
